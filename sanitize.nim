@@ -62,6 +62,7 @@ proc replace(input :sink string, subs :sink Subs) :string =
     if match: result[match] = sh(replace, result[match], match.len)
 
 proc usage = echo """
+poop
 """
 const version {.strdefine.} = "0.0.0"
 
@@ -100,5 +101,7 @@ if inputs.len > 0:
     var file = open(path, mode = fmReadWrite)
     write stdout, replace(string readAll file, subs)
     close file
-else: write stdout, replace(string readAll stdin, subs)
+else:
+  echo "h"
+  write stdout, replace(string readAll stdin, subs)
 

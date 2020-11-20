@@ -3,7 +3,7 @@
   matchKind: sh
   match: printf '%s' "${PWD}"
   replaceKind: sh
-  replace:
+  replace: |
     IFS='
     '
     for i in $(seq ${MATCH_LEN:-1})
@@ -13,7 +13,7 @@
   matchKind: re
   match: USER=\w[\w_]*
   replaceKind: sh
-  replace:
+  replace: |
     printf 'USER='
     IFS='
     '
