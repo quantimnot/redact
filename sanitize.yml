@@ -1,0 +1,22 @@
+---
+-
+  matchKind: sh
+  match: printf '%s' "${PWD}"
+  replaceKind: sh
+  replace:
+    IFS='
+    '
+    for i in $(seq ${MATCH_LEN:-1})
+    do printf '\xe2\x96\x88'
+    done
+-
+  matchKind: re
+  match: USER=\w[\w_]*
+  replaceKind: sh
+  replace:
+    printf 'USER='
+    IFS='
+    '
+    for i in $(seq ${MATCH_LEN:-1})
+    do printf '\xe2\x96\x88'
+    done
