@@ -3,12 +3,7 @@
   matchKind: sh
   match: printf '%s' "${PWD}"
   replaceKind: sh
-  replace: |
-    IFS='
-    '
-    for i in $(seq ${MATCH_LEN:-1})
-    do printf '\xe2\x96\x88'
-    done
+  replace: printf '\xe2\x96\x88'
 -
   matchKind: re
   match: USER=\w[\w_]*

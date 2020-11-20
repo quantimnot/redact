@@ -48,18 +48,20 @@ proc add(subs :var Subs, sanitizer :sink Sanitizer) =
   else: discard
 
 converter toBool(bounds :tuple[first, last :int]) :bool = bounds.first > -1
+
 converter toSlice(bounds :tuple[first, last :int]) :Slice[int] = bounds.first .. bounds.last
-proc replace(input :sink string, subs :sink Subs) :string =
-  result = multiReplace(result, subs.litLitSubs)
-  result = multiReplace(result, subs.reLitSubs)
-  result = parallelReplace(result, subs.pegLitSubs)
+
+proc replace(buffer :var string, subs :sink Subs) =
+  buffer = multiReplace(buffer, subs.litLitSubs)
+  buffer = multiReplace(buffer, subs.reLitSubs)
+  buffer = parallelReplace(buffer, subs.pegLitSubs)
   for (matcher, replace) in subs.reShSubs:
-    let match = findBounds(result, matcher)
-    if match: result[match] = sh(replace, result[match], match.len)
+    let match = findBounds(buffer, matcher)
+    if match: buffer[match] = sh(replace, buffer[match], match.len)
   for (matcher, replace) in subs.pegShSubs:
     var matches :seq[string]
-    let match = findBounds(result, matcher, matches)
-    if match: result[match] = sh(replace, result[match], match.len)
+    let match = findBounds(buffer, matcher, matches)
+    if match: buffer[match] = sh(replace, buffer[match], match.len)
 
 proc usage = echo """
 poop
@@ -98,10 +100,11 @@ if fileExists ruleFilePath:
 
 if inputs.len > 0:
   for path in inputs:
-    var file = open(path, mode = fmReadWrite)
-    write stdout, replace(string readAll file, subs)
-    close file
+    var buffer = string readFile path
+    replace buffer, subs
+    writeFile path, buffer
 else:
-  echo "h"
-  write stdout, replace(string readAll stdin, subs)
+  var buffer = string readAll stdin
+  replace buffer, subs
+  write stdout, buffer
 
