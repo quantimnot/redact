@@ -4,7 +4,7 @@ description   = "redaction utility"
 license       = "MIT"
 installExt    = @["nim", "regex", "peg"]
 srcDir        = "."
-bin           = @[redact]
+bin           = @["redact"]
 
 requires "error"
 requires "yaml"
