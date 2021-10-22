@@ -1,28 +1,30 @@
 import pegs, re, strutils, os, osproc, strtabs, yaml, streams, parseopt
 
 type Subs = object
-  litLitSubs :seq[(string, string)]
-  litShSubs :seq[(string, string)]
-  reLitSubs :seq[(Regex, string)]
-  reShSubs :seq[(Regex, string)]
-  pegLitSubs :seq[(Peg, string)]
-  pegShSubs :seq[(Peg, string)]
+  litLitSubs: seq[(string, string)]
+  litShSubs: seq[(string, string)]
+  reLitSubs: seq[(Regex, string)]
+  reShSubs: seq[(Regex, string)]
+  pegLitSubs: seq[(Peg, string)]
+  pegShSubs: seq[(Peg, string)]
 
 type Sanitizer {.sparse.} = object
-  matchKind :string
-  match :string
-  replaceKind :string
-  replace :string
+  matchKind: string
+  match: string
+  replaceKind: string
+  replace: string
 
-proc sh(cmd :string, match = "", len = 0) :string =
-  let shResult = execCmdEx(cmd, input = match, env = newStringTable({"MATCH_LEN": $len}))
+proc sh(cmd: string, match = "", len = 0): string =
+  let shResult = execCmdEx(cmd, input = match, env = newStringTable({
+      "MATCH_LEN": $len}))
   if shResult.exitCode != 0:
-    writeLine stderr, "shell command exited with non-zero error code: " & $shResult.exitCode
+    writeLine stderr, "shell command exited with non-zero error code: " &
+        $shResult.exitCode
     quit $shResult.exitCode
   result = string shResult.output
   result.stripLineEnd
 
-proc add(subs :var Subs, sanitizer :sink Sanitizer) =
+proc add(subs: var Subs, sanitizer: sink Sanitizer) =
   case sanitizer.matchKind:
   of "sh":
     let match = sh sanitizer.match
@@ -33,7 +35,8 @@ proc add(subs :var Subs, sanitizer :sink Sanitizer) =
   of "lit":
     case sanitizer.replaceKind:
     of "lit": add subs.litLitSubs, (sanitizer.match, sanitizer.replace)
-    of "sh": add subs.litLitSubs, (sanitizer.match, sh(sanitizer.replace, sanitizer.match, sanitizer.match.len))
+    of "sh": add subs.litLitSubs, (sanitizer.match, sh(sanitizer.replace,
+        sanitizer.match, sanitizer.match.len))
     else: discard
   of "re":
     case sanitizer.replaceKind:
@@ -47,11 +50,11 @@ proc add(subs :var Subs, sanitizer :sink Sanitizer) =
     else: discard
   else: discard
 
-converter toBool(bounds :tuple[first, last :int]) :bool = bounds.first > -1
+converter toBool(bounds: tuple[first, last: int]): bool = bounds.first > -1
 
-converter toSlice(bounds :tuple[first, last :int]) :Slice[int] = bounds.first .. bounds.last
+converter toSlice(bounds: tuple[first, last: int]): Slice[int] = bounds.first .. bounds.last
 
-proc replace(buffer :var string, subs :sink Subs) =
+proc replace(buffer: var string, subs: sink Subs) =
   buffer = multiReplace(buffer, subs.litLitSubs)
   buffer = multiReplace(buffer, subs.reLitSubs)
   buffer = parallelReplace(buffer, subs.pegLitSubs)
@@ -59,18 +62,18 @@ proc replace(buffer :var string, subs :sink Subs) =
     let match = findBounds(buffer, matcher)
     if match: buffer[match] = sh(replace, buffer[match], match.len)
   for (matcher, replace) in subs.pegShSubs:
-    var matches :seq[string]
+    var matches: seq[string]
     let match = findBounds(buffer, matcher, matches)
     if match: buffer[match] = sh(replace, buffer[match], match.len)
 
 proc usage = echo """
 poop
 """
-const version {.strdefine.} = "0.0.0"
+const version {.strdefine.} = "0.1.0"
 
-var inputs :seq[string]
-var ruleFilePath :string
-var subs :Subs
+var inputs: seq[string]
+var ruleFilePath: string
+var subs: Subs
 
 for kind, key, value in getOpt():
   case kind
@@ -92,7 +95,7 @@ for kind, key, value in getOpt():
     discard
 
 if fileExists ruleFilePath:
-  var sanitizers :seq[Sanitizer]
+  var sanitizers: seq[Sanitizer]
   var s = newFileStream(ruleFilePath)
   load(s, sanitizers)
   s.close()
